@@ -1,0 +1,27 @@
+From ed7b6030f51c358a3686ee7b3cdd53762b57d93c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
+ <frederic.epitre@orange.fr>
+Date: Fri, 26 Oct 2018 19:53:07 +0200
+Subject: [PATCH] anaconda: make encrypted partitions by default
+
+---
+ pyanaconda/kickstart.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
+index ac007f791..b83dc1b20 100644
+--- a/pyanaconda/kickstart.py
++++ b/pyanaconda/kickstart.py
+@@ -406,6 +406,9 @@ class AutoPart(RemovedCommand):
+         refreshAutoSwapSize(storage)
+         storage.do_autopart = True
+ 
++        # Make encrypted partitions by default
++        auto_part_proxy.Encrypted = True
++
+         if auto_part_proxy.Encrypted:
+             storage.encrypted_autopart = True
+             storage.encryption_passphrase = auto_part_proxy.Passphrase
+-- 
+2.17.1
+

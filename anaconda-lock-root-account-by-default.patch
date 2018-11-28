@@ -1,0 +1,36 @@
+From ec0cf1cbd6ec817be4e98a148f82c77de9b40f83 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
+ <frederic.epitre@orange.fr>
+Date: Sat, 10 Nov 2018 19:17:45 +0100
+Subject: [PATCH] anaconda: lock root account by default
+
+---
+ pyanaconda/kickstart.py | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
+index c396a63e6..40709280b 100644
+--- a/pyanaconda/kickstart.py
++++ b/pyanaconda/kickstart.py
+@@ -2087,17 +2087,7 @@ class RootPw(RemovedCommand):
+     def execute(self, storage, ksdata, instClass, users):
+ 
+         users_proxy = USERS.get_proxy()
+-
+-        if flags.automatedInstall and not users_proxy.IsRootPasswordSet and not users_proxy.IsRootpwKickstarted:
+-            # Lock the root password if during an installation with kickstart
+-            # the root password is empty & not specififed as empty in the kickstart
+-            # (seen == False) via the rootpw command.
+-            # Note that kickstart is actually the only way to specify an empty
+-            # root password - we don't allow that via the UI.
+-            users_proxy.SetRootAccountLocked(True)
+-        elif not flags.automatedInstall and not users_proxy.IsRootPasswordSet:
+-            # Also lock the root password if it was not set during interactive installation.
+-            users_proxy.SetRootAccountLocked(True)
++        users_proxy.SetRootAccountLocked(True)
+ 
+         users.setRootPassword(users_proxy.RootPassword,
+                               users_proxy.IsRootPasswordCrypted,
+-- 
+2.17.1
+

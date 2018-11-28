@@ -1,0 +1,139 @@
+From bd381ff524ac481705f2d6d9404fe597f1205e34 Mon Sep 17 00:00:00 2001
+From: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: add option to lock root account
+
+Not only default setting, so one could leave account locked if entered
+password setting spoke.
+---
+ pyanaconda/ui/gui/spokes/root_password.glade | 18 +++++++-
+ pyanaconda/ui/gui/spokes/root_password.py    | 44 +++++++++++---------
+ 2 files changed, 41 insertions(+), 21 deletions(-)
+
+diff --git a/pyanaconda/ui/gui/spokes/root_password.glade b/pyanaconda/ui/gui/spokes/root_password.glade
+index 64f4c926f..a6f8e26df 100644
+--- a/pyanaconda/ui/gui/spokes/root_password.glade
++++ b/pyanaconda/ui/gui/spokes/root_password.glade
+@@ -40,6 +40,22 @@
+               <object class="GtkBox" id="AnacondaSpokeWindow-action_area1">
+                 <property name="can_focus">False</property>
+                 <property name="orientation">vertical</property>
++                <child>
++                  <object class="GtkCheckButton" id="lock">
++                    <property name="label" translatable="yes">Lock root account</property>
++                    <property name="visible">True</property>
++                    <property name="can_focus">True</property>
++                    <property name="receives_default">False</property>
++                    <property name="xalign">0</property>
++                    <property name="draw_indicator">True</property>
++                    <signal name="clicked" handler="on_lock_clicked" swapped="no"/>
++                  </object>
++                  <packing>
++                    <property name="expand">False</property>
++                    <property name="fill">True</property>
++                    <property name="position">0</property>
++                  </packing>
++                </child>
+                 <child>
+                   <object class="GtkGrid" id="pwgrid">
+                     <property name="visible">True</property>
+@@ -175,7 +191,7 @@
+                   <packing>
+                     <property name="expand">False</property>
+                     <property name="fill">True</property>
+-                    <property name="position">0</property>
++                    <property name="position">1</property>
+                   </packing>
+                 </child>
+               </object>
+diff --git a/pyanaconda/ui/gui/spokes/root_password.py b/pyanaconda/ui/gui/spokes/root_password.py
+index e6a4020a3..96de0df81 100644
+--- a/pyanaconda/ui/gui/spokes/root_password.py
++++ b/pyanaconda/ui/gui/spokes/root_password.py
+@@ -64,6 +64,9 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
+         self._services_module = SERVICES.get_observer()
+         self._services_module.connect()
+ 
++        self._rootlocked = self._users_module.proxy.IsRootAccountLocked
++        self.lock = None
++
+     def initialize(self):
+         NormalSpoke.initialize(self)
+         self.initialize_start()
+@@ -73,6 +76,8 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
+         self._password_bar = self.builder.get_object("password_bar")
+         self._password_label = self.builder.get_object("password_label")
+ 
++        self.lock = self.builder.get_object("lock")
++
+         # set state based on kickstart
+         # NOTE: this will stop working once the module supports multiple kickstart commands
+         self.password_kickstarted = self._users_module.proxy.IsRootpwKickstarted
+@@ -141,24 +146,20 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
+ 
+     def refresh(self):
+         # focus on the password field if password was not kickstarted
+-        if not self.password_kickstarted:
++        if not self.password_kickstarted or not self.lock.get_active():
+             self.password_entry.grab_focus()
+ 
+-        # rerun checks so that we have a correct status message, if any
+-        self.checker.run_checks()
++        self.lock.set_active(self._rootlocked)
++        self.on_lock_clicked(self.lock)
++
++        if not self.lock.get_active():
++            # rerun checks so that we have a correct status message, if any
++            self.checker.run_checks()
+ 
+     @property
+     def status(self):
+         if self._users_module.proxy.IsRootAccountLocked:
+-            # check if we are running in Initial Setup reconfig mode
+-            reconfig_mode = self._services_module.proxy.SetupOnBoot == constants.SETUP_ON_BOOT_RECONFIG
+-            # reconfig mode currently allows re-enabling a locked root account if
+-            # user sets a new root password
+-            if reconfig_mode:
+-                return _("Disabled, set password to enable.")
+-            else:
+-                return _("Root account is disabled.")
+-
++            return _("Root account is disabled.")
+         elif self._users_module.proxy.IsRootPasswordSet:
+             return _("Root password is set")
+         else:
+@@ -177,15 +178,12 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
+         self._users_module.proxy.SetRootpwKickstarted(False)
+         self.password_kickstarted = False
+ 
+-        self._users_module.proxy.SetRootAccountLocked(False)
+-
+-        if not pw:
+-            self._users_module.proxy.ClearRootPassword()
+-            return
++        if pw:
++            self._users_module.proxy.SetCryptedRootPassword(cryptPassword(pw))
++            self._users_module.proxy.IsRootPasswordCrypted(True)
+ 
+-        # we have a password - set it to kickstart data
+-
+-        self._users_module.proxy.SetCryptedRootPassword(cryptPassword(pw))
++        # TODO: check self.lock.get_active() instead of self._rootlocked
++        self._users_module.proxy.SetRootAccountLocked(self._rootlocked)
+ 
+         # clear any placeholders
+         self.remove_placeholder_texts()
+@@ -301,3 +299,9 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
+             NormalSpoke.on_back_clicked(self, button)
+         else:
+             log.info("Return to hub prevented by password checking rules.")
++
++    def on_lock_clicked(self, lock):
++        self.password_entry.set_sensitive(not lock.get_active())
++        self.password_confirmation_entry.set_sensitive(not lock.get_active())
++        if not lock.get_active():
++            self.password_entry.grab_focus()
+\ No newline at end of file
+-- 
+2.17.1
+

@@ -1,0 +1,60 @@
+From 3aa8895510458347f7db65dd9b3e8a1e51eeaf47 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: switch default partitioning scheme to LVM Thin
+ Provisioning
+
+QubesOS/qubes-issues#2412
+---
+ pyanaconda/ui/gui/spokes/storage.py | 4 ++--
+ pyanaconda/ui/tui/spokes/storage.py | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/pyanaconda/ui/gui/spokes/storage.py b/pyanaconda/ui/gui/spokes/storage.py
+index b57c44d9f..ff185c7f4 100644
+--- a/pyanaconda/ui/gui/spokes/storage.py
++++ b/pyanaconda/ui/gui/spokes/storage.py
+@@ -81,7 +81,7 @@ from pyanaconda.modules.common.constants.objects import DISK_SELECTION, DISK_INI
+     BOOTLOADER, AUTO_PARTITIONING
+ from pyanaconda.modules.common.constants.services import STORAGE
+ 
+-from pykickstart.constants import AUTOPART_TYPE_LVM
++from pykickstart.constants import AUTOPART_TYPE_LVM, AUTOPART_TYPE_LVM_THINP
+ from pykickstart.errors import KickstartParseError
+ 
+ import sys
+@@ -666,7 +666,7 @@ class StorageSpoke(NormalSpoke, StorageCheckHandler):
+ 
+         self.autoPartType = self._auto_part_observer.proxy.Type
+         if self.autoPartType == AUTOPART_TYPE_DEFAULT:
+-            self.autoPartType = AUTOPART_TYPE_LVM
++            self.autoPartType = AUTOPART_TYPE_LVM_THINP
+ 
+         self.encrypted = self._auto_part_observer.proxy.Encrypted
+         self.passphrase = self._auto_part_observer.proxy.Passphrase
+diff --git a/pyanaconda/ui/tui/spokes/storage.py b/pyanaconda/ui/tui/spokes/storage.py
+index c1aba55a3..497082664 100644
+--- a/pyanaconda/ui/tui/spokes/storage.py
++++ b/pyanaconda/ui/tui/spokes/storage.py
+@@ -50,7 +50,7 @@ from pyanaconda.bootloader import BootLoaderError
+ from pyanaconda.storage.osinstall import storage_initialize
+ 
+ from pykickstart.base import BaseData
+-from pykickstart.constants import AUTOPART_TYPE_LVM
++from pykickstart.constants import AUTOPART_TYPE_LVM, AUTOPART_TYPE_LVM_THINP
+ from pykickstart.errors import KickstartParseError
+ 
+ from simpleline.render.containers import ListColumnContainer
+@@ -421,7 +421,7 @@ class StorageSpoke(NormalTUISpoke):
+         self._disk_init_observer.proxy.SetDrivesToClear(self.selected_disks)
+ 
+         if self.autopart and self._auto_part_observer.proxy.Type == AUTOPART_TYPE_DEFAULT:
+-            self._auto_part_observer.proxy.SetType(AUTOPART_TYPE_LVM)
++            self._auto_part_observer.proxy.SetType(AUTOPART_TYPE_LVM_THINP)
+ 
+         for disk in self.disks:
+             if disk.name not in self.selected_disks and \
+-- 
+2.17.1
+
