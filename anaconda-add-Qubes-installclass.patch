@@ -10,10 +10,10 @@ Subject: [PATCH] anaconda: add Qubes installclass
 
 diff --git a/pyanaconda/installclasses/qubes.py b/pyanaconda/installclasses/qubes.py
 new file mode 100644
-index 000000000..6fceb7503
+index 0000000..e34a466
 --- /dev/null
 +++ b/pyanaconda/installclasses/qubes.py
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,72 @@
 +#
 +# qubes.py
 +#
@@ -33,18 +33,14 @@ index 000000000..6fceb7503
 +# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +#
 +
-+
 +from pyanaconda.installclass import BaseInstallClass
-+from pyanaconda.core.constants import *
 +from pyanaconda.product import *
-+from pyanaconda import network
 +from pyanaconda.core.i18n import N_
-+import os, types
-+import blivet.platform
++import pyanaconda.platform
 +
 +from blivet.size import Size
-+from blivet.platform import platform
-+from decimal import Decimal
++from pyanaconda.platform import platform
++
 +
 +class InstallClass(BaseInstallClass):
 +    # name has underscore used for mnemonics, strip if you dont need it
@@ -62,16 +58,10 @@ index 000000000..6fceb7503
 +
 +    bootloaderTimeoutDefault = 5
 +
-+    tasks = [(N_("Minimal"), ["base", "base-x", "kde-desktop-qubes", "qubes" ]) ]
++    tasks = [(N_("Minimal"), ["base", "base-x", "qubes"])]
 +
 +    help_placeholder = "QubesPlaceholder.html"
 +    help_placeholder_with_links = "QubesPlaceholderWithLinks.html"
-+
-+    def getPackagePaths(self, uri):
-+        if not type(uri) == types.ListType:
-+            uri = [uri,]
-+
-+        return {'Installation Repo': uri}
 +
 +    def configure(self, anaconda):
 +        BaseInstallClass.configure(self, anaconda)
@@ -82,31 +72,19 @@ index 000000000..6fceb7503
 +                                                storage)
 +        for autoreq in storage.autopart_requests:
 +            if autoreq.mountpoint == "/":
-+                autoreq.max_size=None
-+                autoreq.required_space=Size("10GiB")
++                autoreq.max_size = None
++                autoreq.required_space = Size("10GiB")
 +            if autoreq.mountpoint == "/home":
 +                storage.autopart_requests.remove(autoreq)
 +            if autoreq.mountpoint == "/boot/efi":
-+                autoreq.max_size=Size("500MiB")
++                autoreq.max_size = Size("500MiB")
 +            if autoreq.mountpoint == "/boot" and \
-+                    isinstance(platform, blivet.platform.EFI):
++                    isinstance(platform, pyanaconda.platform.EFI):
 +                # xen.efi don't need /boot
 +                storage.autopart_requests.remove(autoreq)
 +
-+    def productMatches(self, oldprod):
-+        if oldprod is None:
-+            return False
-+
-+        if oldprod.startswith(productName):
-+            return True
-+
-+        return False
-+
-+    def versionMatches(self, oldver):
-+        return True
-+
 +    def __init__(self):
 +        BaseInstallClass.__init__(self)
++
 -- 
-2.17.1
-
+2.19.2
