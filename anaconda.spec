@@ -36,7 +36,7 @@ Patch10: anaconda-generate-xen-efi-configuration.patch
 Patch11: anaconda-fix-dracut-module-to-work-with-reduced-depe.patch
 Patch12: anaconda-use-installer-kernel-parameters-as-default-.patch
 Patch13: anaconda-use-kernel-install-instead-of-grubby-to-reg.patch
-Patch14: anaconda-Fix-a-regular-expression-determining-Releas.patch
+#Patch14: anaconda-Fix-a-regular-expression-determining-Releas.patch
 Patch15: anaconda-Do-not-fail-during-initramfs-start-up-due-t.patch
 Patch16: anaconda-Disable-the-NTP-configuration-spoke.patch
 Patch17: anaconda-drop-useless-on-Qubes-dependencies-on-netwo.patch
@@ -305,7 +305,7 @@ runtime on NFS/HTTP/FTP servers or local disks.
 
 %build
 autoreconf -v --install .
-%configure
+%configure ANACONDA_RELEASE=%{release}
 %{__make} %{?_smp_mflags}
 
 %install
