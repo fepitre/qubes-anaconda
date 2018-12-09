@@ -1,27 +1,68 @@
-From ed7b6030f51c358a3686ee7b3cdd53762b57d93c Mon Sep 17 00:00:00 2001
+From 73169fc00dfa9101ffcb07920f83611eeaf2db42 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
  <frederic.epitre@orange.fr>
 Date: Fri, 26 Oct 2018 19:53:07 +0200
 Subject: [PATCH] anaconda: make encrypted partitions by default
 
 ---
- pyanaconda/kickstart.py | 3 +++
- 1 file changed, 3 insertions(+)
+ pyanaconda/kickstart.py | 42 ++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
 
 diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
-index ac007f791..b83dc1b20 100644
+index ac007f791..65580b3a1 100644
 --- a/pyanaconda/kickstart.py
 +++ b/pyanaconda/kickstart.py
-@@ -406,6 +406,9 @@ class AutoPart(RemovedCommand):
+@@ -406,29 +406,29 @@ class AutoPart(RemovedCommand):
          refreshAutoSwapSize(storage)
          storage.do_autopart = True
  
+-        if auto_part_proxy.Encrypted:
+-            storage.encrypted_autopart = True
+-            storage.encryption_passphrase = auto_part_proxy.Passphrase
+-            storage.encryption_cipher = auto_part_proxy.Cipher
+-            storage.autopart_escrow_cert = getEscrowCertificate(storage.escrow_certificates,
+-                                                                auto_part_proxy.Escrowcert)
+-            storage.autopart_add_backup_passphrase = auto_part_proxy.BackupPassphraseEnabled
+-
+-            luks_version = auto_part_proxy.LUKSVersion or storage.default_luks_version
+-
+-            pbkdf_args = get_pbkdf_args(
+-                luks_version=luks_version,
+-                pbkdf_type=auto_part_proxy.PBKDF or None,
+-                max_memory_kb=auto_part_proxy.PBKDFMemory,
+-                iterations=auto_part_proxy.PBKDFIterations,
+-                time_ms=auto_part_proxy.PBKDFTime
+-            )
 +        # Make encrypted partitions by default
-+        auto_part_proxy.Encrypted = True
++        storage.encrypted_autopart = True
++        storage.encryption_passphrase = auto_part_proxy.Passphrase
++        storage.encryption_cipher = auto_part_proxy.Cipher
++        storage.autopart_escrow_cert = getEscrowCertificate(storage.escrow_certificates,
++                                                            auto_part_proxy.Escrowcert)
++        storage.autopart_add_backup_passphrase = auto_part_proxy.BackupPassphraseEnabled
 +
-         if auto_part_proxy.Encrypted:
-             storage.encrypted_autopart = True
-             storage.encryption_passphrase = auto_part_proxy.Passphrase
++        luks_version = auto_part_proxy.LUKSVersion or storage.default_luks_version
++
++        pbkdf_args = get_pbkdf_args(
++            luks_version=luks_version,
++            pbkdf_type=auto_part_proxy.PBKDF or None,
++            max_memory_kb=auto_part_proxy.PBKDFMemory,
++            iterations=auto_part_proxy.PBKDFIterations,
++            time_ms=auto_part_proxy.PBKDFTime
++        )
+ 
+-            if pbkdf_args and not luks_data.pbkdf_args:
+-                luks_data.pbkdf_args = pbkdf_args
++        if pbkdf_args and not luks_data.pbkdf_args:
++            luks_data.pbkdf_args = pbkdf_args
+ 
+-            storage.autopart_luks_version = luks_version
+-            storage.autopart_pbkdf_args = pbkdf_args
++        storage.autopart_luks_version = luks_version
++        storage.autopart_pbkdf_args = pbkdf_args
+ 
+         if auto_part_proxy.Type != AUTOPART_TYPE_DEFAULT:
+             storage.autopart_type = auto_part_proxy.Type
 -- 
-2.17.1
+2.19.2
 
