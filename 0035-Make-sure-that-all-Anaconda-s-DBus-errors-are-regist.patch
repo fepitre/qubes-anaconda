@@ -1,0 +1,269 @@
+From f95fb09a307ebe1da33b35da63e770b233a82098 Mon Sep 17 00:00:00 2001
+From: Vendula Poncova <vponcova@redhat.com>
+Date: Sat, 4 Apr 2020 14:14:25 +0200
+Subject: [PATCH] Make sure that all Anaconda's DBus errors are registered
+
+Register all DBus errors right after the error mapper is created.
+---
+ pyanaconda/core/dbus.py                       |  4 ++
+ pyanaconda/modules/common/errors/__init__.py  | 46 ++++++-------------
+ .../modules/common/errors/configuration.py    |  2 +-
+ pyanaconda/modules/common/errors/general.py   | 40 ++++++++++++++++
+ .../modules/common/errors/installation.py     |  2 +-
+ pyanaconda/modules/common/errors/module.py    |  2 +-
+ pyanaconda/modules/common/errors/payload.py   |  2 +-
+ pyanaconda/modules/common/errors/storage.py   |  2 +-
+ pyanaconda/modules/common/errors/task.py      |  2 +-
+ .../modules/payloads/packages/packages.py     |  2 +-
+ .../module_boss_modules_test.py               |  3 +-
+ .../module_payload_packages_test.py           |  2 +-
+ 12 files changed, 69 insertions(+), 40 deletions(-)
+ create mode 100644 pyanaconda/modules/common/errors/general.py
+
+diff --git a/pyanaconda/core/dbus.py b/pyanaconda/core/dbus.py
+index 2b7fea978..42a2f2a22 100644
+--- a/pyanaconda/core/dbus.py
++++ b/pyanaconda/core/dbus.py
+@@ -23,6 +23,7 @@ from dasbus.constants import DBUS_STARTER_ADDRESS
+ from dasbus.error import ErrorMapper, get_error_decorator
+ from pyanaconda.anaconda_loggers import get_module_logger
+ from pyanaconda.core.constants import DBUS_ANACONDA_SESSION_ADDRESS, ANACONDA_BUS_ADDR_FILE
++from pyanaconda.modules.common.errors import register_errors
+ 
+ log = get_module_logger(__name__)
+ 
+@@ -92,3 +93,6 @@ SessionBus = SessionMessageBus(
+ 
+ # The decorator for DBus errors.
+ dbus_error = get_error_decorator(error_mapper)
++
++# Register all DBus errors.
++register_errors()
+diff --git a/pyanaconda/modules/common/errors/__init__.py b/pyanaconda/modules/common/errors/__init__.py
+index 5d139c566..d38ef4394 100644
+--- a/pyanaconda/modules/common/errors/__init__.py
++++ b/pyanaconda/modules/common/errors/__init__.py
+@@ -1,6 +1,4 @@
+ #
+-# Common DBus errors.
+-#
+ # Copyright (C) 2018  Red Hat, Inc.  All rights reserved.
+ #
+ # This program is free software; you can redistribute it and/or modify
+@@ -16,32 +14,18 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #
+-from dasbus.error import DBusError
+-
+-from pykickstart.errors import KickstartError
+-from pyanaconda.core.dbus import dbus_error
+-from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
+-
+-__all__ = ["DBusError", "AnacondaError", "InvalidValueError"]
+-
+-
+-@dbus_error("Error", namespace=ANACONDA_NAMESPACE)
+-class AnacondaError(DBusError):
+-    """A default Anaconda error."""
+-    pass
+-
+-
+-@dbus_error("InvalidValueError", namespace=ANACONDA_NAMESPACE)
+-class InvalidValueError(AnacondaError):
+-    """Invalid value passed."""
+-    pass
+-
+-
+-@dbus_error("UnsupportedValueError", namespace=ANACONDA_NAMESPACE)
+-class UnsupportedValueError(AnacondaError):
+-    """Value passed is not supported."""
+-    pass
+-
+-
+-# Define mapping for existing exceptions.
+-dbus_error("KickstartError", namespace=ANACONDA_NAMESPACE)(KickstartError)
++__all__ = ["register_errors"]
++
++
++def register_errors():
++    """Register all Anaconda's DBus errors."""
++    # pylint:disable=unused-import
++    from pyanaconda.modules.common.errors import (
++        configuration,
++        general,
++        installation,
++        module,
++        payload,
++        storage,
++        task
++    )
+diff --git a/pyanaconda/modules/common/errors/configuration.py b/pyanaconda/modules/common/errors/configuration.py
+index 65975e7ef..1f42f83bd 100644
+--- a/pyanaconda/modules/common/errors/configuration.py
++++ b/pyanaconda/modules/common/errors/configuration.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("ConfigurationError", namespace=ANACONDA_NAMESPACE)
+diff --git a/pyanaconda/modules/common/errors/general.py b/pyanaconda/modules/common/errors/general.py
+new file mode 100644
+index 000000000..90e9460d1
+--- /dev/null
++++ b/pyanaconda/modules/common/errors/general.py
+@@ -0,0 +1,40 @@
++#
++# General DBus errors.
++#
++# Copyright (C) 2020  Red Hat, Inc.  All rights reserved.
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <http://www.gnu.org/licenses/>.
++#
++from dasbus.error import DBusError
++
++from pyanaconda.core.dbus import dbus_error
++from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
++
++
++@dbus_error("Error", namespace=ANACONDA_NAMESPACE)
++class AnacondaError(DBusError):
++    """A default Anaconda error."""
++    pass
++
++
++@dbus_error("InvalidValueError", namespace=ANACONDA_NAMESPACE)
++class InvalidValueError(AnacondaError):
++    """Invalid value passed."""
++    pass
++
++
++@dbus_error("UnsupportedValueError", namespace=ANACONDA_NAMESPACE)
++class UnsupportedValueError(AnacondaError):
++    """Value passed is not supported."""
++    pass
+diff --git a/pyanaconda/modules/common/errors/installation.py b/pyanaconda/modules/common/errors/installation.py
+index c7a656182..a91a85d33 100644
+--- a/pyanaconda/modules/common/errors/installation.py
++++ b/pyanaconda/modules/common/errors/installation.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("InstallationError", namespace=ANACONDA_NAMESPACE)
+diff --git a/pyanaconda/modules/common/errors/module.py b/pyanaconda/modules/common/errors/module.py
+index 0160fb021..812d29ab0 100644
+--- a/pyanaconda/modules/common/errors/module.py
++++ b/pyanaconda/modules/common/errors/module.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("UnavailableModuleError", namespace=ANACONDA_NAMESPACE)
+diff --git a/pyanaconda/modules/common/errors/payload.py b/pyanaconda/modules/common/errors/payload.py
+index 581d34157..8d1c5b969 100644
+--- a/pyanaconda/modules/common/errors/payload.py
++++ b/pyanaconda/modules/common/errors/payload.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import PAYLOADS_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("SourceSetupError", namespace=PAYLOADS_NAMESPACE)
+diff --git a/pyanaconda/modules/common/errors/storage.py b/pyanaconda/modules/common/errors/storage.py
+index f18b80845..3bf5f2ed8 100644
+--- a/pyanaconda/modules/common/errors/storage.py
++++ b/pyanaconda/modules/common/errors/storage.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import STORAGE_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("UnavailableStorageError", namespace=STORAGE_NAMESPACE)
+diff --git a/pyanaconda/modules/common/errors/task.py b/pyanaconda/modules/common/errors/task.py
+index 4d4c49914..7b39b9a71 100644
+--- a/pyanaconda/modules/common/errors/task.py
++++ b/pyanaconda/modules/common/errors/task.py
+@@ -18,7 +18,7 @@
+ #
+ from pyanaconda.core.dbus import dbus_error
+ from pyanaconda.modules.common.constants.namespaces import ANACONDA_NAMESPACE
+-from pyanaconda.modules.common.errors import AnacondaError
++from pyanaconda.modules.common.errors.general import AnacondaError
+ 
+ 
+ @dbus_error("TaskError", namespace=ANACONDA_NAMESPACE)
+diff --git a/pyanaconda/modules/payloads/packages/packages.py b/pyanaconda/modules/payloads/packages/packages.py
+index c81c228cd..b8861704d 100644
+--- a/pyanaconda/modules/payloads/packages/packages.py
++++ b/pyanaconda/modules/payloads/packages/packages.py
+@@ -22,7 +22,7 @@ from pyanaconda.core.signal import Signal
+ from pyanaconda.core.configuration.anaconda import conf
+ from pyanaconda.modules.common.base import KickstartBaseModule
+ from pyanaconda.modules.common.constants.objects import PAYLOAD_PACKAGES
+-from pyanaconda.modules.common.errors import InvalidValueError, UnsupportedValueError
++from pyanaconda.modules.common.errors.general import InvalidValueError, UnsupportedValueError
+ from pyanaconda.modules.payloads.packages.constants import MultilibPolicy, TIMEOUT_UNSET, \
+     RETRIES_UNSET, LANGUAGES_DEFAULT, LANGUAGES_NONE
+ from pyanaconda.modules.payloads.packages.packages_interface import PackagesInterface
+diff --git a/tests/nosetests/pyanaconda_tests/module_boss_modules_test.py b/tests/nosetests/pyanaconda_tests/module_boss_modules_test.py
+index ee19819af..0d4771c76 100644
+--- a/tests/nosetests/pyanaconda_tests/module_boss_modules_test.py
++++ b/tests/nosetests/pyanaconda_tests/module_boss_modules_test.py
+@@ -19,9 +19,10 @@ import unittest
+ from unittest.mock import Mock, patch
+ 
+ from dasbus.constants import DBUS_START_REPLY_SUCCESS, DBUS_FLAG_NONE
++from dasbus.error import DBusError
++
+ from pyanaconda.modules.boss.module_manager import ModuleManager
+ from pyanaconda.modules.boss.module_manager.start_modules import StartModulesTask
+-from pyanaconda.modules.common.errors import DBusError
+ from pyanaconda.modules.common.errors.module import UnavailableModuleError
+ 
+ 
+diff --git a/tests/nosetests/pyanaconda_tests/module_payload_packages_test.py b/tests/nosetests/pyanaconda_tests/module_payload_packages_test.py
+index 9865827c0..2852ffcb4 100644
+--- a/tests/nosetests/pyanaconda_tests/module_payload_packages_test.py
++++ b/tests/nosetests/pyanaconda_tests/module_payload_packages_test.py
+@@ -29,7 +29,7 @@ from dasbus.typing import *  # pylint: disable=wildcard-import
+ 
+ from pyanaconda.core.configuration.payload import PayloadSection
+ from pyanaconda.modules.common.constants.objects import PAYLOAD_PACKAGES
+-from pyanaconda.modules.common.errors import InvalidValueError, UnsupportedValueError
++from pyanaconda.modules.common.errors.general import InvalidValueError, UnsupportedValueError
+ from pyanaconda.modules.payloads.payloads import PayloadsService
+ from pyanaconda.modules.payloads.payloads_interface import PayloadsInterface
+ from pyanaconda.modules.payloads.packages.packages import PackagesModule
+-- 
+2.25.4
+

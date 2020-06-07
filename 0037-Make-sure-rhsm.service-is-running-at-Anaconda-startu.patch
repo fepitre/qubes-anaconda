@@ -1,0 +1,33 @@
+From 01b8317d029f842f0ba65b596a003acccc11fd67 Mon Sep 17 00:00:00 2001
+From: Martin Kolman <mkolman@redhat.com>
+Date: Fri, 6 Mar 2020 13:46:22 +0100
+Subject: [PATCH] Make sure rhsm.service is running at Anaconda startup
+
+Make sure rhsm.service is running at Anaconda startup
+to avoid issues with DBus activation of rhsm.service
+timing out on systems that are slow or under heavy load.
+
+We need both Wants to specify the anaconda.target requires
+the rhsm.service as well as After to make sure it is started
+before all the Anaconda services that just have Wants but
+not After.
+
+Resolves: rhbz#1805266
+(cherry picked from commit 9ffde27bacc02dfee049212182defc6e0e3a5b12)
+---
+ data/systemd/anaconda.target | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/data/systemd/anaconda.target b/data/systemd/anaconda.target
+index b7d15f836..b87166628 100644
+--- a/data/systemd/anaconda.target
++++ b/data/systemd/anaconda.target
+@@ -13,3 +13,5 @@ Wants=anaconda-sshd.service
+ Wants=anaconda-pre.service
+ Wants=zram.service
+ Wants=systemd-logind.service
++Wants=rhsm.service
++After=rhsm.service
+-- 
+2.25.4
+

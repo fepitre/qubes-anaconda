@@ -59,6 +59,12 @@ Patch30: 0031-Compute-template-RPMs-needed-spaces.patch
 Patch31: 0032-dnfpayload-make-available-repos-for-post-scripts.patch
 Patch32: 0033-Set-human-names-for-Qubes-thin-pools.patch
 
+# Backport for CentOS 8
+Patch33: 0034-Don-t-use-the-default-error-register.patch
+Patch34: 0035-Make-sure-that-all-Anaconda-s-DBus-errors-are-regist.patch
+Patch35: 0036-Replace-SimpleQueue-with-Queue.patch
+Patch36: 0037-Make-sure-rhsm.service-is-running-at-Anaconda-startu.patch
+
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
 
@@ -83,14 +89,16 @@ Patch32: 0033-Set-human-names-for-Qubes-thin-pools.patch
 %define rpmver 4.10.0
 %define simplelinever 1.1-1
 %define utillinuxver 2.15.1
-%define dasbusver 0.2
+%define dasbusver 0.4
 
 BuildRequires: audit-libs-devel
 BuildRequires: libtool
 BuildRequires: gettext-devel >= %{gettextver}
 BuildRequires: gtk3-devel >= %{gtk3ver}
 BuildRequires: gtk-doc
-BuildRequires: gtk3-devel-docs >= %{gtk3ver}
+# BEGIN QUBES SPECIFIC PART
+#BuildRequires: gtk3-devel-docs >= %{gtk3ver}
+# END QUBES SPECIFIC PART
 BuildRequires: glib2-doc
 BuildRequires: gobject-introspection-devel
 BuildRequires: glade-devel

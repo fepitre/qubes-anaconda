@@ -1,0 +1,35 @@
+From d71e6bb1d0b922451368a376ee97e93ce0b9b2e9 Mon Sep 17 00:00:00 2001
+From: Vendula Poncova <vponcova@redhat.com>
+Date: Fri, 22 May 2020 12:03:14 +0200
+Subject: [PATCH] Replace SimpleQueue with Queue
+
+The class SimpleQueue is not available in Python 3.6.
+---
+ pyanaconda/modules/boss/module_manager/start_modules.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pyanaconda/modules/boss/module_manager/start_modules.py b/pyanaconda/modules/boss/module_manager/start_modules.py
+index 82b00a204..a67d53fb6 100644
+--- a/pyanaconda/modules/boss/module_manager/start_modules.py
++++ b/pyanaconda/modules/boss/module_manager/start_modules.py
+@@ -16,7 +16,7 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #
+-from queue import SimpleQueue
++from queue import Queue
+ 
+ from pyanaconda.anaconda_loggers import get_module_logger
+ from dasbus.constants import DBUS_FLAG_NONE, DBUS_START_REPLY_SUCCESS
+@@ -51,7 +51,7 @@ class StartModulesTask(Task):
+         self._module_names = module_names
+         self._addons_enabled = addons_enabled
+         self._module_observers = []
+-        self._callbacks = SimpleQueue()
++        self._callbacks = Queue()
+ 
+     @property
+     def name(self):
+-- 
+2.25.4
+
